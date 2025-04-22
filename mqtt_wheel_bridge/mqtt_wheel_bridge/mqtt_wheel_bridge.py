@@ -8,7 +8,7 @@ from geometry_msgs.msg import Twist, Point
 from paho.mqtt import client as mqtt
 import time
 
-MQTT_HOST = "192.168.1.9"
+MQTT_HOST = "192.168.0.3"
 MQTT_PORT = 1883
 
 # ROS to MQTT translation for wheel messages
