@@ -2,7 +2,7 @@ import rclpy
 from rclpy.node import Node
 
 from std_msgs.msg import Empty
-from geometry_msgs.msg import Twist, Pose2D
+from geometry_msgs.msg import Twist, Point
 # from mqtt_wheel_msgs.msg import WheelData
 
 from paho.mqtt import client as mqtt
@@ -19,23 +19,23 @@ class WheelBridge(Node):
     client : mqtt.Client # MQTT client
     
     
-    frontleft_data =  Pose2D()
-    frontright_data = Pose2D()
-    backleft_data =   Pose2D()
-    backright_data =  Pose2D()
+    frontleft_data =  Point()
+    frontright_data = Point()
+    backleft_data =   Point()
+    backright_data =  Point()
 
     def __init__(self):
         super().__init__("mqtt_wheel_bridge")
         self.logger = self.get_logger()
         
-        self.frontleft_pub = self.create_publisher( Pose2D, f"frontleft/data", 10)
-        self.frontright_pub = self.create_publisher(Pose2D, f"frontright/data", 10)
-        self.backleft_pub = self.create_publisher(  Pose2D, f"backleft/data", 10)
-        self.backright_pub = self.create_publisher( Pose2D, f"backright/data", 10)
+        self.frontleft_pub = self.create_publisher( Point, f"frontleft/data", 10)
+        self.frontright_pub = self.create_publisher(Point, f"frontright/data", 10)
+        self.backleft_pub = self.create_publisher(  Point, f"backleft/data", 10)
+        self.backright_pub = self.create_publisher( Point, f"backright/data", 10)
 
         # set up power, steer, and brake subscribers for each wheel
         for wheel in self.wheels:
-            self.create_subscription(Pose2D, f"{wheel}/control", eval(f"self.{wheel}_cb"), 10)
+            self.create_subscription(Point, f"{wheel}/control", eval(f"self.{wheel}_cb"), 10)
             
         self.create_subscription(Empty, "calibrate_steering", self.calibrate_cb, 10)
 
@@ -53,14 +53,14 @@ class WheelBridge(Node):
                 self.logger.log("Waiting for MQTT...", 20)
         
 
-    def wheel_cb(self, wheel : str, control : Pose2D):
+    def wheel_cb(self, wheel : str, control : Point):
         self.client.publish(f"/{wheel}/power", control.x)
         self.client.publish(f"/{wheel}/steer", control.theta)
         
-    def frontleft_cb(self, msg :  Pose2D): self.wheel_cb("frontleft", msg)
-    def frontright_cb(self, msg : Pose2D): self.wheel_cb("frontright", msg)
-    def backleft_cb(self, msg :   Pose2D): self.wheel_cb("backleft", msg)
-    def backright_cb(self, msg :  Pose2D): self.wheel_cb("backright", msg)
+    def frontleft_cb(self, msg :  Point): self.wheel_cb("frontleft", msg)
+    def frontright_cb(self, msg : Point): self.wheel_cb("frontright", msg)
+    def backleft_cb(self, msg :   Point): self.wheel_cb("backleft", msg)
+    def backright_cb(self, msg :  Point): self.wheel_cb("backright", msg)
     
     def calibrate_cb(self, msg):
         self.client.publish(f"/calibrate", "")
@@ -83,7 +83,7 @@ class WheelBridge(Node):
             if message.topic.endswith("encoder"):
                 exec(f"self.{wheel}_data.x = float(message.payload)")
             elif message.topic.endswith("velocity"):
-                exec(f"self.{wheel}_data.theta = float(message.payload)")
+                exec(f"self.{wheel}_data.z = float(message.payload)")
             # elif message.topic.endswith("debug"):
             #     exec(f"self.{wheel}_data.debug = message.payload")
             exec(f"self.{wheel}_pub.publish(self.{wheel}_data)")
