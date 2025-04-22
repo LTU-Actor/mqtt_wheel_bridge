@@ -36,6 +36,8 @@ class WheelBridge(Node):
         # set up power, steer, and brake subscribers for each wheel
         for wheel in self.wheels:
             self.create_subscription(WheelControl, f"{wheel}/control", eval(f"self.{wheel}_cb"), 10)
+            
+        self.create_subscription(Empty, "calibrate_steering", self.calibrate_cb, 10)
 
         # MQTT client connect
         self.client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id="wheel_bridge")
@@ -59,6 +61,9 @@ class WheelBridge(Node):
     def frontright_cb(self, msg : WheelControl): self.wheel_cb("frontright", msg)
     def backleft_cb(self, msg : WheelControl): self.wheel_cb("backleft", msg)
     def backright_cb(self, msg : WheelControl): self.wheel_cb("backright", msg)
+    
+    def calibrate_cb(self, msg):
+        self.client.publish(f"/calibrate", "")
         
         
     def on_connect(self, client: mqtt.Client, userdata, flags, reason_code, properties):
