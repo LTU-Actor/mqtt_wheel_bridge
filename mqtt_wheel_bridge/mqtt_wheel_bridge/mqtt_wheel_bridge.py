@@ -55,7 +55,7 @@ class WheelBridge(Node):
 
     def wheel_cb(self, wheel : str, control : Point):
         self.client.publish(f"/{wheel}/power", control.x)
-        self.client.publish(f"/{wheel}/steer", control.theta)
+        self.client.publish(f"/{wheel}/steer", control.z)
         
     def frontleft_cb(self, msg :  Point): self.wheel_cb("frontleft", msg)
     def frontright_cb(self, msg : Point): self.wheel_cb("frontright", msg)
