@@ -7,6 +7,7 @@ from geometry_msgs.msg import Twist, Point
 
 from paho.mqtt import client as mqtt
 import time
+from numpy import interp
 
 MQTT_HOST = "192.168.0.3"
 MQTT_PORT = 1883
@@ -53,8 +54,24 @@ class WheelBridge(Node):
                 self.logger.log("Waiting for MQTT...", 20)
         
 
+    def ms_to_throttle(self, ms : float):
+        negative = ms < 0
+        if ms == 0:
+            return 0
+        
+        if negative:
+            ms = ms * -1
+        
+        ms_values = [0.447, 0.894, 1.34, 1.78, 2.23, 2.68]
+        throttle_values = [97, 100, 105, 110, 115, 120]
+        out = interp(ms, ms_values, throttle_values)
+        
+        if negative:
+            out = out * -1
+        return out
+    
     def wheel_cb(self, wheel : str, control : Point):
-        self.client.publish(f"/{wheel}/power", control.x)
+        self.client.publish(f"/{wheel}/power", self.ms_to_throttle(control.x))
         self.client.publish(f"/{wheel}/steer", control.z)
         
     def frontleft_cb(self, msg :  Point): self.wheel_cb("frontleft", msg)
