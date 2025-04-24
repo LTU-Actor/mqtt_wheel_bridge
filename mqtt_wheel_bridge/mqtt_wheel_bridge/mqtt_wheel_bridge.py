@@ -1,7 +1,7 @@
 import rclpy
 from rclpy.node import Node
 
-from std_msgs.msg import Empty
+from std_msgs.msg import Empty, Bool, String
 from geometry_msgs.msg import Twist, Point
 # from mqtt_wheel_msgs.msg import WheelData
 
@@ -24,6 +24,7 @@ class WheelBridge(Node):
     frontright_data = Point()
     backleft_data =   Point()
     backright_data =  Point()
+    drive_mode = "ackermann"
 
     def __init__(self):
         super().__init__("mqtt_wheel_bridge")
@@ -39,6 +40,8 @@ class WheelBridge(Node):
             self.create_subscription(Point, f"{wheel}/control", eval(f"self.{wheel}_cb"), 10)
             
         self.create_subscription(Empty, "calibrate_steering", self.calibrate_cb, 10)
+        self.create_subscription(String, "drive_mode", self.drive_mode_cb, 10)
+        self.create_subscription(Bool, "direction", self.direction_cb, 10)
 
         # MQTT client connect
         self.client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id="wheel_bridge")
@@ -81,6 +84,36 @@ class WheelBridge(Node):
     
     def calibrate_cb(self, msg):
         self.client.publish(f"/calibrate", "")
+        
+    def drive_mode_cb(self, msg):
+        self.drive_mode = msg.data
+    
+    def direction_cb(self, msg):
+        if self.drive_mode == "rotate":
+            if msg.data:
+                self.client.publish("/frontleft/direction", "1")
+                self.client.publish("/frontright/direction", "0")
+                self.client.publish("/backleft/direction", "1")
+                self.client.publish("/backright/direction", "0")
+            else:
+                self.client.publish("/frontleft/direction", "0")
+                self.client.publish("/frontright/direction", "1")
+                self.client.publish("/backleft/direction", "0")
+                self.client.publish("/backright/direction", "1")
+        else:
+            if msg.data:
+                self.client.publish("/frontleft/direction", "1")
+                self.client.publish("/frontright/direction", "1")
+                self.client.publish("/backleft/direction", "1")
+                self.client.publish("/backright/direction", "1")
+            else:
+                self.client.publish("/frontleft/direction", "0")
+                self.client.publish("/frontright/direction", "0")
+                self.client.publish("/backleft/direction", "0")
+                self.client.publish("/backright/direction", "0")
+        
+    
+    
         
         
     def on_connect(self, client: mqtt.Client, userdata, flags, reason_code, properties):
