@@ -73,11 +73,27 @@ class WheelBridge(Node):
             out = out * -1
         return out
     
+    def ms_to_turns_s(self, ms : float):
+        negative = ms < 0
+        if ms == 0:
+            return 0
+        
+        if negative:
+            ms = ms * -1
+        
+        ms_values = [0.447,2.68]
+        turns_values = [0.28,1.67]
+        out = interp(ms, ms_values, turns_values)
+        
+        if negative:
+            out = out * -1
+        return out
+    
     def wheel_cb(self, wheel : str, control : Point, convert_pwm : bool = False):
         if convert_pwm:
             self.client.publish(f"/{wheel}/power", self.ms_to_throttle(control.x))
         else:
-            self.client.publish(f"/{wheel}/power", control.x)
+            self.client.publish(f"/{wheel}/power", self.ms_to_turns_s(control.x))
         self.client.publish(f"/{wheel}/steer", control.z)
         
     def frontleft_cb(self, msg :  Point): self.wheel_cb("frontleft", msg)
