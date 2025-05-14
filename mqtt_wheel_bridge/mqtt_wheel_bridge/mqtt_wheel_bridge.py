@@ -73,14 +73,17 @@ class WheelBridge(Node):
             out = out * -1
         return out
     
-    def wheel_cb(self, wheel : str, control : Point):
-        self.client.publish(f"/{wheel}/power", self.ms_to_throttle(control.x))
+    def wheel_cb(self, wheel : str, control : Point, convert_pwm : bool = False):
+        if convert_pwm:
+            self.client.publish(f"/{wheel}/power", self.ms_to_throttle(control.x))
+        else:
+            self.client.publish(f"/{wheel}/power", control.x)
         self.client.publish(f"/{wheel}/steer", control.z)
         
     def frontleft_cb(self, msg :  Point): self.wheel_cb("frontleft", msg)
     def frontright_cb(self, msg : Point): self.wheel_cb("frontright", msg)
-    def backleft_cb(self, msg :   Point): self.wheel_cb("backleft", msg)
-    def backright_cb(self, msg :  Point): self.wheel_cb("backright", msg)
+    def backleft_cb(self, msg :   Point): self.wheel_cb("backleft", msg, convert_pwm=True)
+    def backright_cb(self, msg :  Point): self.wheel_cb("backright", msg, convert_pwm=True)
     
     def calibrate_cb(self, msg):
         self.client.publish(f"/calibrate", "")
