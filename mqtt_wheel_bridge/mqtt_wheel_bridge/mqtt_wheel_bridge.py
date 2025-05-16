@@ -66,7 +66,7 @@ class WheelBridge(Node):
             ms = ms * -1
         
         ms_values = [0.447,2.68]
-        throttle_values = [100,120]
+        throttle_values = [97,115]
         out = interp(ms, ms_values, throttle_values)
         
         if negative:
